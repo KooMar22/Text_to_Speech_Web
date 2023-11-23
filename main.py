@@ -1,10 +1,12 @@
 # Install required modules
 import os
 import io
-from flask import Flask, render_template, request, flash, send_file
+from flask import Flask, render_template, request, send_file, jsonify
+from werkzeug.utils import secure_filename
 from gtts import gTTS
 from pypdf import PdfReader
 from decouple import config
+
 
 app = Flask(__name__)
 app.secret_key = config("SECRET_KEY")
@@ -12,36 +14,29 @@ app.secret_key = config("SECRET_KEY")
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    if request.method == 'POST':
-        pdf_file = request.files.get('pdf_file')
-        if not pdf_file or not pdf_file.filename.endswith('.pdf'):
-            flash("Invalid file or no file uploaded.", "danger")
-            return render_template("index.html", converting=False)
+    if request.method == "POST":
+        pdf_file = request.files.get("pdf_file")
+        if not pdf_file or not pdf_file.filename.endswith(".pdf"):
+            return jsonify({"error": "Please upload a valid PDF file."}), 400
         else:
-            language = request.form.get('language', 'en')
+            language = request.form.get("language", "en")
             text = extract_text_from_pdf(pdf_file)
             if text:
                 try:
                     audio_bytes = convert_text_to_audio(text, language)
-                    mp3_filename = os.path.splitext(
-                        pdf_file.filename)[0] + ".mp3"
-                    # Return the file immediately after conversion
-                    response = send_file(
+                    base_filename = os.path.splitext(pdf_file.filename)[0]
+                    mp3_filename = secure_filename(base_filename + ".mp3")
+                    return send_file(
                         io.BytesIO(audio_bytes),
-                        mimetype='audio/mp3',
+                        mimetype="audio/mp3",
                         as_attachment=True,
                         download_name=mp3_filename
                     )
-                    flash("Conversion completed successfully", "success")
-                    return response
                 except Exception as e:
-                    flash(f"Conversion failed: {e}", "danger")
+                    return jsonify({"error": "Failed to convert text to audio: " + str(e)}), 500
             else:
-                flash("Failed to extract text from PDF.", "danger")
-        # In case of failure, return to the form
-        return render_template("index.html", converting=False)
-    # GET request or initial page load
-    return render_template("index.html", converting=False)
+                return jsonify({"error": "Failed to extract text from PDF."}), 400
+    return render_template("index.html")
 
 
 def extract_text_from_pdf(pdf_file):
@@ -52,7 +47,6 @@ def extract_text_from_pdf(pdf_file):
             text += page.extract_text() or ""
         return text
     except Exception as e:
-        flash("An error occurred while reading the PDF file.", "danger")
         return None
 
 
@@ -64,9 +58,8 @@ def convert_text_to_audio(text, language):
         mp3_io.seek(0)
         return mp3_io.read()
     except Exception as e:
-        flash("An error occurred while converting text to audio.", "danger")
         return None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
