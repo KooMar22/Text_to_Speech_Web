@@ -5,11 +5,11 @@ from flask import Flask, render_template, request, send_file, jsonify
 from werkzeug.utils import secure_filename
 from gtts import gTTS
 from pypdf import PdfReader
-# from decouple import config
+from decouple import config
 
 
 app = Flask(__name__)
-# app.secret_key = config("SECRET_KEY")
+app.secret_key = config("SECRET_KEY")
 
 
 @app.route("/", methods=["GET", "POST"])
