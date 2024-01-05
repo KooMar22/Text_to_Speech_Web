@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=C:\Users\djhra\Documents\Learning_Programming\Uradi_sam_projekti\Text_to_Speech\WEB_APP\TextToSpeechWeb
+set VIRTUAL_ENV=C:\Users\djhra\Documents\Learning_Programming\Uradi_sam_projekti\Text_to_Speech\WEB_App\TextToSpeechWeb
 
 if not defined PROMPT set PROMPT=$P$G
 
